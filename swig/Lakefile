@@ -1,0 +1,25 @@
+#|-*- mode:lisp -*-|#
+(in-package :cl-user)
+(defpackage :lake.user
+  (:use :cl :lake :cl-syntax)
+  (:shadowing-import-from :lake
+                          :directory))
+(in-package :lake.user)
+
+(use-syntax :interpol)
+
+(defparameter swig (or (ros:getenv "SWIG")
+                       "swig3.0"))
+(defparameter flags "-swig-lisp -cffi -I/usr/include -I/usr/include/linux -I/usr/include/x86_64-linux-gnu -D__x86_64__ -importall -I./zxcvbn-c ")
+
+(task "default" ("zxcvbn-c-cffi.lisp"))
+
+(file "zxcvbn-c-cffi.lisp" ("zxcvbn-c-cffi.i")
+  (sh "git clone --depth 1 https://github.com/tsyrogit/zxcvbn-c")
+  (sh "cd zxcvbn-c; make")
+  (sh #?"${swig} ${flags} zxcvbn-c-cffi.i")
+  (sh "mv zxcvbn_c_cffi.lisp zxcvbn-c-cffi.lisp")
+  (sh "cp zxcvbn-c/libzxcvbn.so zxcvbn-c/zxcvbn.dict .."))
+
+(task "clean" ()
+  (sh "rm -rf zxcvbn-c zxcvbn-c-cffi.lisp ../libzxcvbn.so ../zxcvbn.dict"))
